@@ -24,6 +24,7 @@ import org.bouncycastle.crypto.engines.XSalsa20Engine;
 import org.bouncycastle.crypto.macs.Poly1305;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.CipherParameters;
 
 /**
  * Encryption and decryption using XSalsa20Poly1305.
@@ -183,5 +184,22 @@ public class SecretBox {
     final byte[] nonce = new byte[NONCE_SIZE];
     blake2b.doFinal(nonce, 0);
     return nonce;
+  }
+
+  //generate Poly1305 subkey
+  byte[] createSubKey(XSalsa20Engine xsalsa20) {
+    final byte[] sk = new byte[Keys.KEY_LEN];
+    xsalsa20.processBytes(sk, 0, Keys.KEY_LEN, sk, 0);
+    return sk;
+  }
+
+  XSalsa20Engine initSalsaEngine(boolean forEncrypt, byte[] nonce) {
+    final XSalsa20Engine xsalsa20 = new XSalsa20Engine();
+    xsalsa20.init(forEncrypt, makeCipherInitParams(key, nonce));
+    return xsalsa20;
+  }
+
+  private CipherParameters makeCipherInitParams(byte[] sharedSecret, byte[] nonce) {
+    return new ParametersWithIV(new KeyParameter(sharedSecret), nonce);
   }
 }
